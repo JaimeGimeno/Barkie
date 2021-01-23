@@ -13,8 +13,8 @@ int STATE = 0;
 // this pinout corresponds to RadioShield
 // https://github.com/jgromes/RadioShield
 #define NSS 10
-#define DIO0 2
-#define DIO1 3
+#define DI00 2
+#define DI01 3
 #define MOSI 11
 #define MISO 12
 #define SCLK 13

@@ -14,8 +14,8 @@ unsigned long age;
 // this pinout corresponds to RadioShield
 // https://github.com/jgromes/RadioShield
 #define NSS 10 
-#define DIO0 2
-#define DIO1 6 //Arduino estropeado 6 //Arduino estropeado 6 //Arduino estropeado 6 //Arduino estropeado 6 //Arduino estropeado 6 //Arduino estropeado 
+#define DI00 2
+#define DI01 6 //Arduino estropeado 6 //Arduino estropeado 6 //Arduino estropeado 6 //Arduino estropeado 6 //Arduino estropeado 6 //Arduino estropeado 
 #define MOSI 11
 #define MISO 12
 #define SCLK 13
