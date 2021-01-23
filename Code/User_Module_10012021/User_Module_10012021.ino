@@ -12,13 +12,13 @@ int STATE = 0;
 // create instance of LoRa class using SX1278 module
 // this pinout corresponds to RadioShield
 // https://github.com/jgromes/RadioShield
-  // NSS pin:   10 (4 on ESP32/ESP8266 boards)
-  // DIO0 pin:  2
-  // DIO1 pin:  3
-  // MOSI pin:  11
-  // MISO pin:  12
-  // SCLK pin:  13
-SX1278 lora = new LoRa;
+#define NSS 10
+#define DI00 2
+#define DI01 3
+#define MOSI 11
+#define MISO 12
+#define SCLK 13
+SX1278 lora = new LoRa (NSS, DI00, DI01); //nss, di00, di01
 //boolean for send and receive LoRa
 boolean success = false;
 //receiveLoRa
@@ -31,6 +31,9 @@ String sentString;
 #define greenLED 7
 #define blueLED 8
 
+//Constants
+#define DELAY 1000
+
 void setup() {
 
   //Serial
@@ -42,7 +45,7 @@ void setup() {
   pinMode(TxD, OUTPUT);
 
   //Title
-  Serial.println("Dog_Module.");
+  Serial.println("User_Module.");
   Serial.println("by Alfonso Forcen");
   Serial.println();
   
@@ -93,6 +96,10 @@ void checkLEDs() {
 // initialize SX1278 with default settings
 boolean initializeLoRa () { 
 
+  Serial.print("Delaying ");
+  Serial.print(DELAY);
+  Serial.println("ms ...");
+  delay(DELAY);
   Serial.print(F("Initializing ... "));
   // carrier frequency:           434.0 MHz
   // bandwidth:                   125.0 kHz

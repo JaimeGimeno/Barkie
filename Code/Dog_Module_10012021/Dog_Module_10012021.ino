@@ -2,7 +2,9 @@
 #include <SoftwareSerial.h>
 #include <TinyGPS.h>
 TinyGPS gps;
-SoftwareSerial SoftSerial(5, 4); //tx, rx
+#define TX 5
+#define RX 4
+SoftwareSerial SoftSerial(TX, RX); //tx, rx
 float flat, flon;
 unsigned long age;
 
@@ -11,13 +13,13 @@ unsigned long age;
 // create instance of LoRa class using SX1278 module
 // this pinout corresponds to RadioShield
 // https://github.com/jgromes/RadioShield
-  // NSS pin:   10 (4 on ESP32/ESP8266 boards)
-  // DIO0 pin:  2
-  // DIO1 pin:  3
-  // MOSI pin:  11
-  // MISO pin:  12
-  // SCLK pin:  13
-SX1278 lora = new LoRa (10, 6, 3); //nss, di00, di01
+#define NSS 10 
+#define DI00 2
+#define DI01 6 //Arduino estropeado 6 //Arduino estropeado 6 //Arduino estropeado 6 //Arduino estropeado 6 //Arduino estropeado 6 //Arduino estropeado 
+#define MOSI 11
+#define MISO 12
+#define SCLK 13
+SX1278 lora = new LoRa (NSS, DI00, DI01); //nss, di00, di01
 //boolean for send and receive LoRa
 boolean success = false;
 //receiveLoRa
@@ -28,6 +30,9 @@ String sentString;
 //Pins and LEDs
 #define redLED 8
 #define greenLED 9
+
+//Constants
+#define DELAY 1000
 
 void setup() {
 
@@ -85,6 +90,10 @@ void checkLEDs() {
 // initialize SX1278 with default settings
 boolean initializeLoRa () { 
 
+  Serial.print("Delaying ");
+  Serial.print(DELAY);
+  Serial.println("ms ...");
+  delay(DELAY);
   Serial.print(F("Initializing ... "));
   // carrier frequency:           434.0 MHz
   // bandwidth:                   125.0 kHz
