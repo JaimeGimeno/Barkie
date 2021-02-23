@@ -1,21 +1,20 @@
-//GPS
+#include <LoRaLib.h>
+
+//Bluetooth
 #include <SoftwareSerial.h>
-#include <TinyGPS.h>
-TinyGPS gps;
-#define TX 5
-#define RX 4
-SoftwareSerial SoftSerial(TX, RX); //tx, rx
-float flat, flon;
-unsigned long age;
+#define RxD 4
+#define TxD 5
+SoftwareSerial Bluetooth(RxD,TxD);
+int STATE = 0;
 
 //LoRa libraries and declarations
 #include <LoRaLib.h>
 // create instance of LoRa class using SX1278 module
 // this pinout corresponds to RadioShield
 // https://github.com/jgromes/RadioShield
-#define NSS 10 
+#define NSS 10
 #define DI00 2
-#define DI01 6 //Arduino estropeado 6 //Arduino estropeado 6 //Arduino estropeado 6 //Arduino estropeado 6 //Arduino estropeado 6 //Arduino estropeado 
+#define DI01 3
 #define MOSI 11
 #define MISO 12
 #define SCLK 13
@@ -29,7 +28,8 @@ String sentString;
 
 //Pins and LEDs
 #define redLED 8
-#define greenLED 9
+#define greenLED 7
+#define blueLED 6
 
 //Constants
 #define DELAY 1000
@@ -38,11 +38,14 @@ void setup() {
 
   //Serial
   Serial.begin(9600);
-  //SoftwareSerial
-  SoftSerial.begin(9600);
-  
+  //Bluetooth
+  Bluetooth.begin(9600);
+
+  pinMode(RxD, INPUT);
+  pinMode(TxD, OUTPUT);
+
   //Title
-  Serial.println("Dog_Module.");
+  Serial.println("User_Module.");
   Serial.println("by Alfonso Forcen");
   Serial.println();
   
@@ -54,8 +57,10 @@ void setup() {
   //Pins
   pinMode(redLED, OUTPUT);
   pinMode(greenLED, OUTPUT);
+  pinMode(blueLED, OUTPUT);
   digitalWrite(redLED, HIGH);
   digitalWrite(greenLED, LOW);
+  digitalWrite(blueLED, LOW);
 
   //Be sure every single LED is working
   checkLEDs();
@@ -84,6 +89,7 @@ void checkLEDs() {
 
     makeLEDBlink(redLED);
     makeLEDBlink(greenLED);
+    makeLEDBlink(blueLED);
   
 }
 
@@ -114,6 +120,30 @@ boolean initializeLoRa () {
     delay (200);
   }
   return success;
+}
+
+
+void checkLoRa() {
+
+  Serial.print(F("Scanning channel for LoRa preamble ... "));
+
+  // start scanning current channel
+  int state = lora.scanChannel();
+
+  if(state == PREAMBLE_DETECTED) {
+    // LoRa preamble was detected
+    Serial.println(F(" detected preamble!"));
+    digitalWrite(greenLED, HIGH);
+    digitalWrite(redLED, LOW);
+
+  } else if(state == CHANNEL_FREE) {
+    // no preamble was detected, channel is free
+    Serial.println(F(" channel is free!"));
+    digitalWrite(greenLED, LOW);
+    digitalWrite(redLED, HIGH);
+
+  }
+  
 }
 
 //Returns true if success, false if error
@@ -232,113 +262,58 @@ bool sendLoRa (){
   }
 
   return solution;
+  delay(200);
   
 }
 
-bool getGPSCoordinates () {
-
-  //Declarations
-  bool newData = false;
-  unsigned long chars;
-  unsigned short sentences, failed;
-
-  // For one second we parse GPS data and report some key values
-  for (unsigned long start = millis(); millis() - start < 1000;){
-    
-    while (SoftSerial.available()){
-      
-      char c = SoftSerial.read();
-      if (gps.encode(c)) newData = true;
-      
-    }
-    
-  }
-
-  if (newData){
-
-    success = true;
-
-    // Getting the data
-    gps.f_get_position(&flat, &flon, &age);
-
-    // Serial
-    Serial.print("LAT=");
-    Serial.print(flat == TinyGPS::GPS_INVALID_F_ANGLE ? 0.0 : flat, 6);
-    Serial.print(" LON=");
-    Serial.print(flon == TinyGPS::GPS_INVALID_F_ANGLE ? 0.0 : flon, 6);
-    Serial.print(" SAT=");
-    Serial.print(gps.satellites() == TinyGPS::GPS_INVALID_SATELLITES ? 0 : gps.satellites());
-    Serial.print(" PREC=");
-    Serial.print(gps.hdop() == TinyGPS::GPS_INVALID_HDOP ? 0 : gps.hdop());
-  
-  }
-
-  // More statistics
-  gps.stats(&chars, &sentences, &failed);
-
-  // Print those in serial
-  Serial.print(" CHARS=");
-  Serial.print(chars);
-  Serial.print(" SENTENCES=");
-  Serial.print(sentences);
-  Serial.print(" CSUM ERR=");
-  Serial.println(failed);
-
-  // Just in case GPS fails
-  if (chars == 0) Serial.println("** No characters received from GPS: check wiring **");
-
-  return success;
-
-}  
-
 void loop() {
 
-  //Turn red LED on to sshow that the module is working
-  digitalWrite(redLED, HIGH);
-  
-  //Check if user is requesting
-  success = false;
-  while (!success) {
+  //Check if phone is requesting
+  Serial.println("Waiting for Bluetooth request");
+  if (Bluetooth.available() > 0) {
 
-    success = receiveLoRa();
-    delay(400);
-        
-  }
-  
-  Serial.print("Received String: ");
-  Serial.println(receivedString);
+    //Read the request
+    STATE = Bluetooth.read();
+    Serial.print("STATE = ");
+    Serial.println(STATE);
 
-  //If it gets a request, then it looks for and send the coordinates
-  if (receivedString.equals("request")) {
+    //Request received from phone
+    if (STATE == '1') {
 
-    //Get the GPS coordinates
-    success = false;
-    while (!success) {
+       makeLEDBlink(blueLED);
 
-      success = getGPSCoordinates();
-        
-    }
+      //Send the request to collar
+      sentString = "request";
+      success = false;
+      Serial.println("Sending radio request.");
+      while (!success) {
 
-    //Create the String response (sentString)
-    sentString.concat(flat * 1000000);
-    sentString.concat(" ");
-    sentString.concat(flon * 1000000);
-
-    //And send it
-    delay(5000);
-    Serial.print("Sending String: ");
-    Serial.println(sentString);
-
-    success = false;
-    while (!success) {
-
-      success = sendLoRa();
-      delay(400);
-        
-    }
+        success = sendLoRa();
+         
+      }
+      Serial.print("Message sent: ");
+      Serial.println(sentString);
       
+      //Wait to receive the answer from the collar
+      success = false;
+      Serial.println("Waiting for receive GPS.");
+      while (!success) {
+
+        success = receiveLoRa();
+        
+      }
+
+      Serial.print("Coordinates received: ");
+      Serial.println(receivedString);
+      Bluetooth.print(receivedString);
+
+      makeLEDBlink(blueLED);
+    
+      STATE = 0;
+      
+    }
+    
   }
-   
-  delay(200); 
- 
- }
+  delay(200);
+
+}

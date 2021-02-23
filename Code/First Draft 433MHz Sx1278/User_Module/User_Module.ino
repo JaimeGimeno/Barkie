@@ -27,9 +27,9 @@ String receivedString;
 String sentString;
 
 //Pins and LEDs
-#define redLED 6
+#define redLED 8
 #define greenLED 7
-#define blueLED 8
+#define blueLED 6
 
 //Constants
 #define DELAY 1000
