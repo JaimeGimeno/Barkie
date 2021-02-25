@@ -7,7 +7,8 @@ TinyGPS gps;
 SoftwareSerial SoftSerial(TX, RX); //tx, rx
 float flat, flon;
 unsigned long age;
-
+boolean success = false;
+    
 //Strings
 String requestString = "request";
 int requestString_size = 9;
