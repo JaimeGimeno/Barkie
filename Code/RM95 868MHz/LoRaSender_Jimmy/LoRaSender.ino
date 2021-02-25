@@ -11,7 +11,7 @@ void setup() {
   Serial.begin(9600);
   while (!Serial);
 
-  Serial.println("LoRa Sender");
+  Serial.println("\n\nLoRa Sender by Jaime Gimeno\n\n");
 
   LoRa.setPins(ss, reset, dio0);
   if (!LoRa.begin(868E6)) {
@@ -70,7 +70,7 @@ void loop() {
   Serial.println("Counter: "+String(counter));
   delay(1000);
   Serial.println("Simado");
-  send_sync("coordenadas aqui " + String(counter), "42");
+  send_sync("coordenadas aqui " + String(counter), "420");
 
   counter = counter + 1;
 
