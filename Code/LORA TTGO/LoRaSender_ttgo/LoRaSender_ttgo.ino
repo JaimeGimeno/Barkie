@@ -8,13 +8,15 @@
  */
 
 // BLUETOOTH
-#include <SoftwareSerial.h>
-#define RxD 13
-#define TxD 12
-#define blue_LED 21
-SoftwareSerial Bluetooth(RxD, TxD);
-int STATE = 0;
+#include "BluetoothSerial.h"
 
+#if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
+#error Bluetooth is not enabled! Please run `make menuconfig` to and enable it
+#endif
+
+BluetoothSerial SerialBT;
+
+int STATE = 0;
 
 // LORA ####################
 #include <SPI.h>
@@ -24,6 +26,8 @@ int STATE = 0;
 
 #define OFF 0   // For LED
 #define ON 1
+
+String msg;
 
 // SPI LoRa Radio
 #define LORA_SCK 5        // GPIO5 - SX1276 SCK
@@ -54,11 +58,15 @@ U8G2_SSD1306_128X64_NONAME_F_SW_I2C Display(U8G2_R0, /* clock=*/ OLED_SCL, /* da
 const int blueLED = LED_BUILTIN; 
 int counter = 0;
 
+String rssi = "";
+String packet = "";
+
 void setup() {
   Serial.begin(115200);
   while (!Serial);
 
-  Bluetooth.begin(9600);
+  SerialBT.begin("ESP32test"); //Bluetooth device name
+  Serial.println("Bluetooth device started, waiting for request...");
 
   Serial.println("LoRa Sender");
 
@@ -91,19 +99,51 @@ void setup() {
   LoRa.setTxPower(14, PA_OUTPUT_RFO_PIN);
 
   //LEDS
-  pinMode(blue_LED, OUTPUT);
-  digitalWrite(blue_LED, LOW);
+  //pinMode(blue_LED, OUTPUT);
+  //digitalWrite(blue_LED, LOW);
   
   
 }
 
-void make_blue_led_blink(){ // Esta funcion eliminarla al final (quita tiempo)
-  for(int i = 0; i <= 2; i++) {
-    digitalWrite(blue_LED, HIGH);
-    delay(100);
-    digitalWrite(blue_LED, LOW);
-    delay(100);
+//void make_blue_led_blink(){ // Esta funcion eliminarla al final (quita tiempo)
+//  for(int i = 0; i <= 2; i++) {
+//    digitalWrite(blue_LED, HIGH);
+//    delay(100);
+//    digitalWrite(blue_LED, LOW);
+//    delay(100);
+//  }
+//}
+
+
+String receive_packet(){
+  int packetSize = LoRa.parsePacket();
+  while(!packetSize) {
+    packetSize = LoRa.parsePacket(); 
   }
+    Serial.print("Received packet '");
+
+  digitalWrite(blueLED, ON);  // Turn blue LED on
+
+  // read packet
+  packet = "";                   // Clear packet
+  while (LoRa.available()) {
+    packet += (char)LoRa.read(); // Assemble new packet
+  }
+  rssi = LoRa.packetRssi();
+
+  // Display Info
+  Display.clearBuffer();  
+  Display.setCursor(0,12); Display.print("LoRa Receiver");
+  Display.setCursor(0,26); Display.print("Received packet:");
+  Display.setCursor(0,42); Display.print("    '" + packet + "'");
+  Display.setCursor(0,58); Display.print("RSSI " + rssi);
+  Display.sendBuffer();
+
+  digitalWrite(blueLED, OFF); // Turn blue LED off
+  
+  Serial.println(packet + "' with RSSI " + rssi);   
+
+  return packet;
 }
 
 void send_packet(String msg){
@@ -124,24 +164,26 @@ void send_packet(String msg){
 }
 
 void loop() {
+  if (SerialBT.available()) { // SerialBT.available()
+    STATE = SerialBT.read();
 
-  Serial.println("Waiting for bluetooth request");
-  
-  if (true) { // Bluetooth.available() > 0
-    STATE = Bluetooth.read();
+    if (STATE == '1') { // STATE == '1'
 
-    if (true) { // STATE == '1'
-
+      // Send request to dog
       Serial.print("Sending packet: ");
       Serial.println(counter);
       send_packet("HeLoRa! " + (String)counter);
-    
       counter++;
+
+      // Wait for response      
+      msg = receive_packet();
+      // Send coordinates to app
+      SerialBT.print(msg);
 
       STATE = 0;
     }
   
   }
 
-  delay(2000);
+  delay(20);
 }

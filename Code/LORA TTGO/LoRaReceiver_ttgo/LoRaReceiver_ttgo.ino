@@ -12,8 +12,22 @@
 #include <U8g2lib.h>   // https://github.com/olikraus/U8g2_Arduino
 // #include <U8x8lib.h>
 
+// GPS
+#include <TinyGPS.h>
+#include <SoftwareSerial.h>
+TinyGPS gps;
+#define TX 17
+#define RX 16
+SoftwareSerial SoftSerial(TX, RX); //tx, rx
+float flat, flon;
+unsigned long age;
+bool success;
+
 #define OFF 0   // For LED
 #define ON 1
+
+//sendLoRa
+String sentString;
 
 // SPI LoRa Radio
 #define LORA_SCK 5        // GPIO5 - SX1276 SCK
@@ -45,9 +59,9 @@ String rssi = "";
 String packet = "";
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(9600);
   while (!Serial);
-
+  SoftSerial.begin(9600);
   Serial.println("LoRa Receiver");
 
   Display.begin();
@@ -104,8 +118,102 @@ String receive_packet(){
    
 }
 
+void send_packet(String msg){
+
+  digitalWrite(blueLED, ON);  // Turn blue LED on
+  // send packet
+  LoRa.beginPacket();
+  LoRa.print(msg);
+  LoRa.endPacket();
+  digitalWrite(blueLED, OFF); // Turn blue LED off
+
+  // Display Info
+  Display.clearBuffer();  
+  Display.setCursor(0,12); Display.print("LoRa Sender");
+  Display.setCursor(0,30); Display.print("Sent Packet:");
+  Display.setCursor(0,48); Display.print(" # " + msg);
+  Display.sendBuffer();
+}
+
+bool getGPSCoordinates () {
+
+  //Declarations
+  bool newData = false;
+  unsigned long chars;
+  unsigned short sentences, failed;
+
+  // For one second we parse GPS data and report some key values
+  for (unsigned long start = millis(); millis() - start < 1000;){
+    
+    while (SoftSerial.available()){
+      
+      char c = SoftSerial.read();
+      if (gps.encode(c)) newData = true;
+      
+    }
+    
+  }
+
+  if (newData){
+
+    success = true;
+
+    // Getting the data
+    gps.f_get_position(&flat, &flon, &age);
+
+    // Serial
+    Serial.print("LAT=");
+    Serial.print(flat == TinyGPS::GPS_INVALID_F_ANGLE ? 0.0 : flat, 6);
+    Serial.print(" LON=");
+    Serial.print(flon == TinyGPS::GPS_INVALID_F_ANGLE ? 0.0 : flon, 6);
+    Serial.print(" SAT=");
+    Serial.print(gps.satellites() == TinyGPS::GPS_INVALID_SATELLITES ? 0 : gps.satellites());
+    Serial.print(" PREC=");
+    Serial.print(gps.hdop() == TinyGPS::GPS_INVALID_HDOP ? 0 : gps.hdop());
+  
+  }
+
+  // More statistics
+  gps.stats(&chars, &sentences, &failed);
+
+  // Print those in serial
+  Serial.print(" CHARS=");
+  Serial.print(chars);
+  Serial.print(" SENTENCES=");
+  Serial.print(sentences);
+  Serial.print(" CSUM ERR=");
+  Serial.println(failed);
+
+  // Just in case GPS fails
+  if (chars == 0) Serial.println("** No characters received from GPS: check wiring **");
+
+  return success;
+
+}  
+
 void loop() {
+
+  // Wait for request
+  String msg = receive_packet();
   
- String msg = receive_packet(); 
+  // Get the GPS coordinates
+  success = false;
+  success = getGPSCoordinates();
+  while (!success) {
+    success = getGPSCoordinates();
+  }
+
+  //Create the String response (sentString)
+  sentString = "";
+  sentString.concat(flat * 1000000);
+  sentString.concat(" ");
+  sentString.concat(flon * 1000000);
   
+  // Send the response with the coordinates
+  Serial.print("Sending String: ");
+  Serial.println(sentString);
+
+  send_packet(sentString);
+  
+  delay(20);
 }
