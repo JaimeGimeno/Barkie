@@ -33,8 +33,8 @@ String sentString = "";
   RH_RF95 rf95(RFM95_CS, RFM95_INT);
 
 //Pins and LEDs
-#define redLED 8
-#define greenLED 9
+#define redLED 9
+#define greenLED 8
 
 //Constants
 #define DELAY 1000
@@ -94,6 +94,14 @@ void setup() {
   //Be sure every single LED is working
   checkLEDs();
 
+  //Checking good behaviour GPS (satellites located)
+  success = false;
+  while (!success) {
+
+    success = getGPSCoordinates();
+      
+  }
+
 }
 
 void makeLEDBlink (int LED) {
@@ -122,7 +130,7 @@ void checkLEDs() {
 }
 
 //Returns true if success, false if error
-bool receiveLoRa () {
+void receiveLoRa () {
 
   uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
   uint8_t len = sizeof(buf);
@@ -156,7 +164,7 @@ bool receiveLoRa () {
 }
 
 //Returns true if success, false if error
-bool sendLoRa (String msg){
+void sendLoRa (String msg){
 
   //Prepare and send the message
   int msg_size = msg.length() + 1;
