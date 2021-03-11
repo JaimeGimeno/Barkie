@@ -2,7 +2,7 @@
 #include <SoftwareSerial.h>
 #define RxD 4
 #define TxD 5
-SoftwareSerial Bluetooth(RxD,TxD);
+SoftwareSerial Bluetooth(TxD,RxD);
 int STATE = 0;
 
 //Pins and LEDs
@@ -46,8 +46,9 @@ void setup() {
   
   //Bluetooth
   Bluetooth.begin(9600);
-  pinMode(RxD, INPUT);
-  pinMode(TxD, OUTPUT);
+
+  pinMode(RxD, OUTPUT);
+  pinMode(TxD, INPUT);
 
   //Title
   Serial.println("User_Module.");
@@ -190,15 +191,15 @@ void loop() {
 
   //Check if phone is requesting
   
-  //Serial.println("Waiting for Bluetooth request");
-  //if (Bluetooth.available() > 0) {
+  Serial.println("Waiting for Bluetooth request");
+  if (Bluetooth.available() > 0) {
 
     //Read the request
     STATE = Bluetooth.read();
     Serial.print("STATE = ");
     Serial.println(STATE);
     
-    STATE = '1';
+    //STATE = '1';
 
     //Request received from phone
     if (STATE == '1') {
@@ -223,7 +224,9 @@ void loop() {
       STATE = 0;
       
     }
+
+  }
     
-  delay(30000);
+  delay(200);
 
 }
