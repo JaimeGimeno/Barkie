@@ -104,7 +104,7 @@ String receive_packet(){
 
   // Display Info
   Display.clearBuffer();  
-  // Display.setCursor(0,12); Display.print("LoRa Receiver");
+  Display.setCursor(0,12); Display.print("LoRa Receiver");
   Display.setCursor(0,26); Display.print("Received packet:");
   Display.setCursor(0,42); Display.print("    '" + packet + "'");
   Display.setCursor(0,58); Display.print("RSSI " + rssi);
@@ -129,7 +129,7 @@ void send_packet(String msg){
 
   // Display Info
   Display.clearBuffer();  
-  //Display.setCursor(0,12); Display.print("LoRa Sender");
+  Display.setCursor(0,12); Display.print("LoRa Sender");
   Display.setCursor(0,30); Display.print("Sent Packet:");
   Display.setCursor(0,48); Display.print(" # " + msg);
   Display.sendBuffer();
