@@ -62,7 +62,7 @@ String rssi = "";
 String packet = "";
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(9600);
   while (!Serial);
 
   SerialBT.begin("ESP32test"); //Bluetooth device name
@@ -170,10 +170,8 @@ void loop() {
     if (STATE == '1') { // STATE == '1'
 
       // Send request to dog
-      Serial.print("Sending packet: ");
-      Serial.println(counter);
-      send_packet("HeLoRa! " + (String)counter);
-      counter++;
+      Serial.print("Sending 'request'");
+      send_packet("request");
 
       // Wait for response      
       msg = receive_packet();
