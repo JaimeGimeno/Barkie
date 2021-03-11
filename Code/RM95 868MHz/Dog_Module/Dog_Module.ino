@@ -33,8 +33,8 @@ String sentString = "";
   RH_RF95 rf95(RFM95_CS, RFM95_INT);
 
 //Pins and LEDs
-#define redLED 8
-#define greenLED 9
+#define redLED 9
+#define greenLED 8
 
 //Constants
 #define DELAY 1000
